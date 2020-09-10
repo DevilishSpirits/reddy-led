@@ -1,0 +1,74 @@
+menu "LED firmware configuration"
+	config LED_PIN
+		int "Status LED pin"
+		default "2"
+		help
+			Blinking LED pin
+	config LSTRIP_PIN
+		int "Lower-strip pin"
+		default "13"
+		help
+			The pin on which the lower indexes strip is connected
+	config USTRIP_PIN
+		int "Upper-strip pin"
+		default "15"
+		help
+			The pin on which the upper indexes strip is connected
+	
+	config LSTRIP_LED_COUNT
+		int "Lower-strip LED count"
+		default "512"
+		help
+			The number of LEDs on the lower indexes strip
+	config USTRIP_LED_COUNT
+		int "Upper-strip LED count"
+		default "512"
+		help
+			The number of LEDs on the upper indexes strip
+	
+	config LSTRIP_LED_COUNT
+		int "Lower-strip LED count"
+		default "512"
+		help
+			The number of LEDs on the lower indexes strip
+	
+	config STOP_COUNT
+		int "Key-frame buffer length"
+		default "16384"
+		help
+			The number of key-frames allocated in the ESP32
+	
+	menu "Wi-Fi"
+		config WIFI_SSID
+			string "SSID"
+			default "RLEDED"
+			help
+				SSID of ESP32 soft-AP
+		config WIFI_PASS
+			string "Password"
+			default "D1sc0Blndr"
+			help
+				Password of ESP32 soft-AP
+		config WIFI_CHANNEL
+			int "Channel"
+			range 1 13
+			default 1
+			help
+				Channel of ESP32 soft-AP
+		config WIFI_HIDDEN
+			bool "Hidden"
+			default true
+			help
+				If false the network will be visible
+		config WIFI_MAX_CONNECTION
+			int "Maximum connections"
+			range 1 4
+			default 4
+			help
+				Max number of stations allowed to connect in
+		config WIFI_BEACON_INTERVAL
+			int "Beacon interval"
+			range 100 60000
+			default 100
+	endmenu
+endmenu
