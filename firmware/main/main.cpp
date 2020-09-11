@@ -129,8 +129,19 @@ void app_main()
 			} else lled_colors[i] = from_stop.color;
 			std::swap(lled_colors[i].red,lled_colors[i].green);
 		}
+		for (auto i = 0; i < CONFIG_USTRIP_LED_COUNT; i++) {
+			animation::led_state &led_state = firmware::uled_states[i];
+			led_state.update<typeof(firmware::global_animation)>(firmware::global_animation,firmware::current_frame_ticks_forward);
+			const firmware::animation_stop_t &from_stop = firmware::global_animation[led_state.current];
+			if (from_stop.duration) {
+				const firmware::animation_stop_t &to_stop = firmware::global_animation[from_stop.next_index];
+				
+				uled_colors[i] = firmware::color_t::mix(from_stop.color,to_stop.color,((led_state.remaining+1)*firmware::frame_step_divider) - firmware::subframe_difference,from_stop.duration*firmware::frame_step_divider);
+			} else uled_colors[i] = from_stop.color;
+			std::swap(uled_colors[i].red,uled_colors[i].green);
+		}
 		lstrip.write_sample(reinterpret_cast<uint8_t*>(lled_colors.data()),lled_colors.size() * sizeof(lled_colors[0]),true);
-		lstrip.wait_tx_done(std::numeric_limits<TickType_t>::max());
+		lstrip.write_sample(reinterpret_cast<uint8_t*>(uled_colors.data()),uled_colors.size() * sizeof(uled_colors[0]),true);
 		board_led_off();
 		last_time += firmware::current_frame_ticks_forward * firmware::frame_step_divider;
 		vTaskDelay(10 / portTICK_PERIOD_MS);
