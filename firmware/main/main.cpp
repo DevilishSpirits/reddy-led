@@ -1,16 +1,3 @@
-#if 0
-#include <esp_system.h>
-#include "config.h"
-#include "animation.h"
-#include "web.h"
-#include <esp_wifi.h>
-#include <esp_netif.h>
-#include <esp_log.h>
-#include <cstring>
-
-#include <limits>
-#include <atomic>
-#endif
 #include <animation.hpp>
 #include <strip.hpp>
 
@@ -89,84 +76,63 @@ void app_main()
 	
 	// Init a demo RGB wave 
 	firmware::global_animation[0].color = firmware::color_t(.5,0,0);
-	firmware::global_animation[0].duration   = 10;
+	firmware::global_animation[0].duration   = 5;
 	firmware::global_animation[0].next_index = 1;
 	
 	firmware::global_animation[1].color = firmware::color_t(0,0,0);
-	firmware::global_animation[1].duration   = 30;
+	firmware::global_animation[1].duration   = 15;
 	firmware::global_animation[1].next_index = 2;
 	
-	firmware::global_animation[2].color = firmware::color_t(.3,.3,0);
-	firmware::global_animation[2].duration   = 20;
+	firmware::global_animation[2].color = firmware::color_t(0,0,0);
+	firmware::global_animation[2].duration   = 15;
 	firmware::global_animation[2].next_index = 3;
 	
-	firmware::global_animation[3].color = firmware::color_t(0,0,0);
-	firmware::global_animation[2].duration   = 30;
-	firmware::global_animation[3].next_index = 0;
+	firmware::global_animation[3].color = firmware::color_t(.3,.3,0);
+	firmware::global_animation[3].duration   = 10;
+	firmware::global_animation[3].next_index = 4;
 	
-	for (auto &&i: firmware::lled_states) {
-		i.current = 0;
-		i.remaining = 0;
+	firmware::global_animation[4].color = firmware::color_t(0,0,0);
+	firmware::global_animation[4].duration   = 15;
+	firmware::global_animation[4].next_index = 0;
+	
+	for (auto i = 0; i < CONFIG_LSTRIP_LED_COUNT;i++) {
+		firmware::lled_states[i].current = i%4;
+		firmware::lled_states[i].remaining = i % 40;
 	}
 	for (auto &&i: firmware::uled_states) {
 		i.current = 0;
 		i.remaining = 0;
 	}
-	/*for (auto i = 0; i < STRIP_LED_COUNT; i++)
-		anim.led_timestamps[i] = 0;
-	
-	anim.buffer[0].next = 1;
-	anim.buffer[0].color[COLORC_RED] = 16;
-	anim.buffer[0].color[COLORC_GREEN] = 0;
-	anim.buffer[0].color[COLORC_BLUE] = 0;
-	anim.buffer[0].delay = 25;
-	
-	anim.buffer[1].next = 2;
-	anim.buffer[1].color[COLORC_RED] = 16;
-	anim.buffer[1].color[COLORC_GREEN] = 0;
-	anim.buffer[1].color[COLORC_BLUE] = 0;
-	anim.buffer[1].delay = 25;
-
-	anim.buffer[2].next = 3;
-	anim.buffer[2].color[COLORC_RED] = 0;
-	anim.buffer[2].color[COLORC_GREEN] = 16;
-	anim.buffer[2].color[COLORC_BLUE] = 0;
-	anim.buffer[2].delay = 25;
-	
-	anim.buffer[3].next = 4;
-	anim.buffer[3].color[COLORC_RED] = 0;
-	anim.buffer[3].color[COLORC_GREEN] = 16;
-	anim.buffer[3].color[COLORC_BLUE] = 0;
-	anim.buffer[3].delay = 25;
-
-	anim.buffer[4].next = 5;
-	anim.buffer[4].color[COLORC_RED] = 0;
-	anim.buffer[4].color[COLORC_GREEN] = 0;
-	anim.buffer[4].color[COLORC_BLUE] = 16;
-	anim.buffer[4].delay = 25;
-	
-	anim.buffer[5].next = 0;
-	anim.buffer[5].color[COLORC_RED] = 0;
-	anim.buffer[5].color[COLORC_GREEN] = 0;
-	anim.buffer[5].color[COLORC_BLUE] = 16;
-	anim.buffer[5].delay = 25;
-
-	for (auto i = 0; i < STRIP_LED_COUNT; i++)
-		anim.led_index[i] = i%6;*/
 	// Enter main-loop
 	printf("Entering main loop !\n");
 	int64_t last_time = esp_timer_get_time();
+	#if !NO_COLOR_BUFFER
+	std::array<firmware::color_t,CONFIG_LSTRIP_LED_COUNT> lled_colors;
+	std::array<firmware::color_t,CONFIG_USTRIP_LED_COUNT> uled_colors;
+	#endif
 	while (1) {
 		// Reset the watchdog
 		esp_task_wdt_reset();
 		// Write samples and wait
-		board_led_on();
 		int64_t now_time = esp_timer_get_time();
-		firmware::current_frame_ticks_forward = (now_time - last_time)/100000;
-		lstrip.write_sample(reinterpret_cast<uint8_t*>(firmware::lled_states.data()),firmware::lled_states.size() * sizeof(firmware::lled_states[0]),false);
-		ustrip.write_sample(reinterpret_cast<uint8_t*>(firmware::uled_states.data()),firmware::uled_states.size() * sizeof(firmware::uled_states[0]),true);
+		firmware::current_frame_ticks_forward = (now_time - last_time) / firmware::frame_step_divider;
+		firmware::subframe_difference         = (now_time - last_time) % firmware::frame_step_divider;
+		board_led_on();
+		for (auto i = 0; i < CONFIG_LSTRIP_LED_COUNT; i++) {
+			animation::led_state &led_state = firmware::lled_states[i];
+			led_state.update<typeof(firmware::global_animation)>(firmware::global_animation,firmware::current_frame_ticks_forward);
+			const firmware::animation_stop_t &from_stop = firmware::global_animation[led_state.current];
+			if (from_stop.duration) {
+				const firmware::animation_stop_t &to_stop = firmware::global_animation[from_stop.next_index];
+				
+				lled_colors[i] = firmware::color_t::mix(from_stop.color,to_stop.color,((led_state.remaining+1)*firmware::frame_step_divider) - firmware::subframe_difference,from_stop.duration*firmware::frame_step_divider);
+			} else lled_colors[i] = from_stop.color;
+			std::swap(lled_colors[i].red,lled_colors[i].green);
+		}
+		lstrip.write_sample(reinterpret_cast<uint8_t*>(lled_colors.data()),lled_colors.size() * sizeof(lled_colors[0]),true);
 		lstrip.wait_tx_done(std::numeric_limits<TickType_t>::max());
 		board_led_off();
-		last_time = now_time;
+		last_time += firmware::current_frame_ticks_forward * firmware::frame_step_divider;
+		vTaskDelay(10 / portTICK_PERIOD_MS);
 	}
 }

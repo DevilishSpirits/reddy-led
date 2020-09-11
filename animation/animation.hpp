@@ -55,11 +55,11 @@ namespace animation {
 		
 		template <typename T>
 		void update(const T& stops, unsigned int steps) {
-			while (remaining > steps) {
+			while (remaining < steps) {
 				const typename T::stop &current_stop = stops[current];
+				steps -= remaining;
 				current = current_stop.next_index;
 				remaining = stops[current].duration;
-				steps -= remaining;
 			}
 			remaining -= steps;
 		}

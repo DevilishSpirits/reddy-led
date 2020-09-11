@@ -10,7 +10,12 @@ animation::stop_array<firmware::color_t,CONFIG_STOP_COUNT> firmware::global_anim
  *
  * This global variable is used to compute by how much frames are skipped
  */
-unsigned int firmware::current_frame_ticks_forward;
+int64_t firmware::current_frame_ticks_forward;
+/** Sub-frame ticks microseconds
+ *
+ * Since a frame is fairly long, this value allow great smoothing
+ */
+int64_t firmware::subframe_difference;
 
 std::array<animation::led_state,CONFIG_LSTRIP_LED_COUNT> firmware::lled_states;
 std::array<animation::led_state,CONFIG_USTRIP_LED_COUNT> firmware::uled_states;

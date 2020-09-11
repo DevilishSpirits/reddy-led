@@ -8,28 +8,22 @@
  * This array contain rmt_item32_t consts used to produce 0 and 1 bits using the
  * [RMT](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/peripherals/rmt.html)
  */
-const rmt_item32_t firmware::rmt_bits[2] = {{{15,1,33,0}}/*0*/,/*1*/{{33,1,15,0}}};
+const rmt_item32_t firmware::rmt_bits[2] = {{{15,1,31,0}}/*0*/,/*1*/{{33,1,15,0}}};
 
+#if NO_COLOR_BUFFER
 /** Send RBG stream
  *
  * This is the translation function used in [rmt_translator_init](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/peripherals/rmt.html#_CPPv419rmt_translator_init13rmt_channel_t15sample_to_rmt_t).
  *
  */
-static void sample_to_rmt(const void *src, rmt_item32_t *dest, size_t src_size, size_t wanted_num, size_t *translated_size, size_t *item_num)
+inline void sample_to_rmt(const void *src, rmt_item32_t *&dest, size_t src_size)
 {
 	
-	size_t size;
-	size_t num;
-	uint8_t *psrc = (uint8_t *)src;
-	rmt_item32_t *pdest = dest;
-	for (size = 0, num = 0; size < src_size && num < wanted_num; size++, psrc++) {
-		for (int bit = 0; bit < 8; bit++) {
-			(pdest++)->val = firmware::rmt_bits[(*psrc & (1 << (7-bit))) != 0].val;
-			num++;
-		}
+	const uint8_t *psrc = static_cast<const uint8_t*>(src);
+	for (auto i = 0; i < src_size; i++, psrc++) {
+		for (int bit = 0; bit < 8; bit++)
+			(dest++)->val = firmware::rmt_bits[(*psrc & (1 << (7-bit))) != 0].val;
 	}
-	*translated_size = size;
-	*item_num = num;
 }
 
 /** Update leds and send the animation
@@ -44,19 +38,43 @@ static void rgb_to_rmt(const void *src, rmt_item32_t *dest, size_t src_size, siz
 		// Update then display
 		led_state->update<typeof(firmware::global_animation)>(firmware::global_animation,firmware::current_frame_ticks_forward);
 		const firmware::animation_stop_t &from_stop = firmware::global_animation[led_state->current];
-		const firmware::animation_stop_t &to_stop   = firmware::global_animation[from_stop.next_index];
-		
-		firmware::color_t ws2812_words = firmware::color_t::mix(from_stop.color,to_stop.color,led_state->remaining,from_stop.duration);
-		size_t dummy_translated_size;
-		sample_to_rmt(reinterpret_cast<const void*>(&ws2812_words),dest,sizeof(ws2812_words),wanted_num,&dummy_translated_size,item_num);
+		if (from_stop.duration) {
+			const firmware::animation_stop_t &to_stop   = firmware::global_animation[from_stop.next_index];
+			
+			firmware::color_t ws2812_words = firmware::color_t::mix(from_stop.color,to_stop.color,led_state->remaining,from_stop.duration);
+			sample_to_rmt(reinterpret_cast<const void*>(&ws2812_words),dest,sizeof(firmware::color_t));
+		} else sample_to_rmt(reinterpret_cast<const void*>(&(from_stop.color)),dest,sizeof(firmware::color_t));
 		// 
 		*translated_size += sizeof(animation::led_state);
 		src_size         -= sizeof(animation::led_state);
-		wanted_num -= sizeof(firmware::color_t)*8;
-		
+		wanted_num       -= sizeof(firmware::color_t)*8;
+		*item_num        += sizeof(firmware::color_t)*8;
 		led_state++;
 	}
 }
+#else
+/** @brief Convert bytes to rmt_item32_t
+ *
+ * This is the translation function used in [rmt_translator_init](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/peripherals/rmt.html#_CPPv419rmt_translator_init13rmt_channel_t15sample_to_rmt_t).
+ */
+static void sample_to_rmt(const void *src, rmt_item32_t *dest, size_t src_size, size_t wanted_num, size_t *translated_size, size_t *item_num)
+{
+	size_t size;
+	size_t num;
+	uint8_t *psrc = (uint8_t *)src;
+	rmt_item32_t *pdest = dest;
+	for (size = 0, num = 0; size < src_size && num < wanted_num; size++, psrc++) {
+		for (int bit = 0; bit < 8; bit++) {
+			(pdest++)->val = firmware::rmt_bits[(*psrc & (1 << (7-bit))) != 0].val,
+			num++;
+		}
+	}
+	*translated_size = size;
+	*item_num = num;
+};
+
+#define rgb_to_rmt sample_to_rmt
+#endif
 
 /** Setup a strip
  *

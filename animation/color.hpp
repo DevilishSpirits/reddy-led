@@ -25,8 +25,8 @@ namespace animation {
 		 *
 		 * This function make the color mixing using remaining and duration
 		 */
-		static T mix(T from, T to, uint16_t remaining, uint16_t duration) {
-			const uint16_t elapsed = remaining - duration;
+		static T mix(T from, T to, int64_t remaining, int64_t duration) {
+			const int64_t elapsed = duration - remaining;
 			return (from * remaining + to * elapsed)/duration;
 		}
 	};
@@ -45,9 +45,9 @@ namespace animation {
 		 *
 		 * This function make the color mixing using remaining and duration
 		 */
-		static basic_rgb mix(const basic_rgb& from, const basic_rgb& to, uint16_t remaining, uint16_t duration) {
+		static basic_rgb mix(const basic_rgb& from, const basic_rgb& to, int64_t remaining, int64_t duration) {
 			basic_rgb result;
-			const uint16_t elapsed = remaining - duration;
+			const int64_t elapsed = duration - remaining;
 			result.red = (from.red * remaining + to.red * elapsed)/duration;
 			result.green = (from.green * remaining + to.green * elapsed)/duration;
 			result.blue = (from.blue * remaining + to.blue * elapsed)/duration;
@@ -72,9 +72,9 @@ namespace animation {
 		 *
 		 * This function make the color mixing using remaining and duration
 		 */
-		static basic_rgbw mix(const basic_rgbw &from, const basic_rgbw & to, uint16_t remaining, uint16_t duration) {
+		static basic_rgbw mix(const basic_rgbw &from, const basic_rgbw & to, int64_t remaining, int64_t duration) {
 			basic_rgbw result;
-			const uint16_t elapsed = remaining - duration;
+			const int64_t elapsed = duration - remaining;
 			result.red = (from.red * remaining + to.red * elapsed)/duration;
 			result.green = (from.green * remaining + to.green * elapsed)/duration;
 			result.blue = (from.blue * remaining + to.blue * elapsed)/duration;
