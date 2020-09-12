@@ -30,9 +30,6 @@ namespace animation {
 				/** In the "init_indexes" array
 				 */
 				TREE_INIT_INDEXES,
-				/** In the "init_step" array
-				 */
-				TREE_INIT_STEPS,
 			} tree_state = TREE_TOP_LEVEL;
 			/** Last key name
 			 *
@@ -48,9 +45,6 @@ namespace animation {
 				/** "init_indexes"
 				 */
 				KEY_INIT_INDEXES,
-				/** "init_steps"
-				 */
-				KEY_INIT_STEPS,
 				/** "red"
 				 */
 				KEY_RED,
@@ -101,7 +95,6 @@ namespace animation {
 			std::string parse_error;
 			
 			virtual int emit_initial_index(uint16_t value) = 0;
-			virtual int emit_initial_remaining(double value) = 0;
 			virtual int emit_stop(animation::stop<animation::basic_rgbw<double>> &stop) = 0;
 		public:
 			parser(void);
