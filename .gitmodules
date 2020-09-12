@@ -1,0 +1,3 @@
+[submodule "animation/yajl"]
+	path = animation/yajl
+	url = https://github.com/lloyd/yajl
