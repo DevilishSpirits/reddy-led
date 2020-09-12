@@ -162,9 +162,6 @@ int animation::parser::yajl_start_map(void *ctx)
 		return 1;
 	}
 	switch (parser->current_key) {
-		case KEY_INIT_INDEXES:
-			parser->tree_state = TREE_INIT_INDEXES;
-			return 1;
 		case KEY_NONE:
 			if (parser->tree_state == TREE_TOP_LEVEL) 
 				parser->tree_state = TREE_ROOT_MAP;

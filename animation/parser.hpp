@@ -63,7 +63,7 @@ namespace animation {
 				/** "next_index"
 				 */
 				KEY_NEXT_INDEX,
-			} current_key;
+			} current_key = KEY_NONE;
 			/** Depth in the skipped element
 			 *
 			 * This value is used to easily skip unknow keys.
