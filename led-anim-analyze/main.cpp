@@ -75,7 +75,7 @@ int main(int argc, char** argv)
 		}
 	for (auto i = 0; i < parser.stops.size(); i++)
 		if (parser.stops[i].next_index >= parser.stops.size()) {
-			std::cerr << "\"next_index\" of the " << i << "th \"stops\" is greater than the number of \"stops\" (" << parser.initial_indexes[i] << " must be less than " << parser.stops.size() << ")" << std::endl;
+			std::cerr << "\"next_index\" of the " << i << "th \"stops\" is greater than the number of \"stops\" (" << parser.stops[i].next_index << " must be less than " << parser.stops.size() << ")" << std::endl;
 			sane = false;
 		}
 	if (!sane)
