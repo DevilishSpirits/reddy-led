@@ -6,6 +6,7 @@
 
 #include <driver/gpio.h>
 #include <esp_task_wdt.h>
+#include <parser.hpp>
 
 // Onboard LED helpers
 static inline void board_led_set(bool state) {
@@ -75,33 +76,23 @@ void app_main()
 	firmware::strip ustrip(RMT_CHANNEL_1,gpio_num_t(CONFIG_USTRIP_PIN));
 	
 	// Init a demo RGB wave 
-	firmware::global_animation[0].color = firmware::color_t(.5,0,0);
-	firmware::global_animation[0].duration   = 5;
-	firmware::global_animation[0].next_index = 1;
-	
-	firmware::global_animation[1].color = firmware::color_t(0,0,0);
-	firmware::global_animation[1].duration   = 15;
-	firmware::global_animation[1].next_index = 2;
-	
-	firmware::global_animation[2].color = firmware::color_t(0,0,0);
-	firmware::global_animation[2].duration   = 15;
-	firmware::global_animation[2].next_index = 3;
-	
-	firmware::global_animation[3].color = firmware::color_t(.3,.3,0);
-	firmware::global_animation[3].duration   = 10;
-	firmware::global_animation[3].next_index = 4;
-	
-	firmware::global_animation[4].color = firmware::color_t(0,0,0);
-	firmware::global_animation[4].duration   = 15;
-	firmware::global_animation[4].next_index = 0;
-	
-	for (auto i = 0; i < CONFIG_LSTRIP_LED_COUNT;i++) {
-		firmware::lled_states[i].current = i%4;
-		firmware::lled_states[i].remaining = i % 40;
-	}
-	for (auto &&i: firmware::uled_states) {
-		i.current = 0;
-		i.remaining = 0;
+	{
+		// THE PARSER MUST BE DESTROYED BEFORE THE MAIN-LOOP !!! or it dead-lock...
+		const char json_demo[] = "{"
+			"\"stops\": ["
+				"{\"red\": 0.5, \"duration\": 0.5, \"next_index\": 1},"
+				"{\"duration\": 1.5, \"next_index\": 2},"
+				"{\"duration\": 1.5, \"next_index\": 3},"
+				"{\"red\": 0.3, \"green\": 0.3, \"duration\": 1, \"next_index\": 4},"
+				"{\"duration\": 1.5, \"next_index\": 0}"
+			"],"
+			"\"init\": ["
+				"{\"stop\": 0},{\"stop\": 1},{\"stop\": 2},{\"stop\": 3},{\"stop\": 4}"
+			"]"
+		"}";
+		firmware::parser parser;
+		parser.parse(json_demo,sizeof(json_demo));
+		parser.complete_parse();
 	}
 	// Enter main-loop
 	printf("Entering main loop !\n");
