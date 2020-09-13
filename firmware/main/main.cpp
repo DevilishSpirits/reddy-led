@@ -113,6 +113,9 @@ void app_main()
 	while (1) {
 		// Reset the watchdog
 		esp_task_wdt_reset();
+		vTaskDelay(10 / portTICK_PERIOD_MS);
+		// Lock the animation
+		std::lock_guard<std::mutex> lock(firmware::animation_lock);
 		// Write samples and wait
 		int64_t now_time = esp_timer_get_time();
 		firmware::current_frame_ticks_forward = (now_time - last_time) / firmware::frame_step_divider;
@@ -144,6 +147,5 @@ void app_main()
 		lstrip.write_sample(reinterpret_cast<uint8_t*>(uled_colors.data()),uled_colors.size() * sizeof(uled_colors[0]),true);
 		board_led_off();
 		last_time += firmware::current_frame_ticks_forward * firmware::frame_step_divider;
-		vTaskDelay(10 / portTICK_PERIOD_MS);
 	}
 }

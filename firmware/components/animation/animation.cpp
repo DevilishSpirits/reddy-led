@@ -17,5 +17,11 @@ int64_t firmware::current_frame_ticks_forward;
  */
 int64_t firmware::subframe_difference;
 
+/** Animation buffer mutex
+ *
+ * This mutex avoid weird issues when updating the animation.
+ */
+std::mutex firmware::animation_lock;
+
 std::array<animation::led_state,CONFIG_LSTRIP_LED_COUNT> firmware::lled_states;
 std::array<animation::led_state,CONFIG_USTRIP_LED_COUNT> firmware::uled_states;

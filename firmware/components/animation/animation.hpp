@@ -1,6 +1,7 @@
 #pragma once
 #include <sdkconfig.h>
 #include "../../../animation/animation.hpp"
+#include <mutex>
 namespace firmware {
 	typedef uint8_t color_val_t;
 	typedef animation::basic_rgb<uint8_t> color_t;
@@ -15,4 +16,6 @@ namespace firmware {
 	extern std::array<animation::led_state,CONFIG_USTRIP_LED_COUNT> uled_states;
 	
 	const auto frame_step_divider = 100000;
+	
+	extern std::mutex animation_lock;
 }
