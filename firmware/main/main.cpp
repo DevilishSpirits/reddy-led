@@ -1,12 +1,15 @@
 #include <animation.hpp>
 #include <strip.hpp>
+#include "web.hpp"
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
 #include <driver/gpio.h>
 #include <esp_task_wdt.h>
+#include <esp_wifi.h>
 #include <parser.hpp>
+#include <cstring>
 
 // Onboard LED helpers
 static inline void board_led_set(bool state) {
@@ -40,10 +43,9 @@ void app_main()
 	board_led_off();
 	
 	// Init network
-	//printf("[wifi] Initializing netif... %s\n",esp_err_to_name(esp_netif_init()));
-	//printf("[wifi] Creating ESP default event loop... %s\n",esp_err_to_name(esp_event_loop_create_default()));
+	printf("[wifi] Initializing netif... %s\n",esp_err_to_name(esp_netif_init()));
+	printf("[wifi] Creating ESP default event loop... %s\n",esp_err_to_name(esp_event_loop_create_default()));
 	// Init WiFi
-	#if 0
 	wifi_init_config_t wifi_init_config = WIFI_INIT_CONFIG_DEFAULT();
 	wifi_init_config.nvs_enable = false;
 	printf("[wifi] Initializing Wifi... %s\n",esp_err_to_name(esp_wifi_init(&wifi_init_config)));
@@ -69,8 +71,7 @@ void app_main()
 	printf("[wifi] Setting-up Wifi... %s\n",esp_err_to_name(esp_wifi_set_config(ESP_IF_WIFI_AP,&wifi_config)));
 	printf("[wifi] Starting Wifi... %s\n",esp_err_to_name(esp_wifi_start()));
 	// Init the webserver
-	printf("[httpd] Starting webserver... %s\n",esp_err_to_name(webserver::start(anim,front_buffer,back_buffer)));
-	#endif
+	printf("[httpd] Starting webserver... %s\n",esp_err_to_name(firmware::start_httpd()));
 	// Init the strip
 	firmware::strip lstrip(RMT_CHANNEL_0,gpio_num_t(CONFIG_LSTRIP_PIN));
 	firmware::strip ustrip(RMT_CHANNEL_1,gpio_num_t(CONFIG_USTRIP_PIN));
