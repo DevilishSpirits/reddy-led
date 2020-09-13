@@ -27,9 +27,14 @@ namespace animation {
 				/** An element of the "stops" array
 				 */
 				TREE_STOP_ELEMENT,
-				/** In the "init_indexes" array
+				/** In the "init" array
+				 *
+				 * But not in a init element
 				 */
-				TREE_INIT_INDEXES,
+				TREE_INIT_ARRAY,
+				/** An element of the "init" array
+				 */
+				TREE_INIT_ELEMENT,
 			} tree_state = TREE_TOP_LEVEL;
 			/** Last key name
 			 *
@@ -42,9 +47,9 @@ namespace animation {
 				/** "stops"
 				 */
 				KEY_STOPS,
-				/** "init_indexes"
+				/** "init"
 				 */
-				KEY_INIT_INDEXES,
+				KEY_INIT,
 				/** "red"
 				 */
 				KEY_RED,
@@ -63,6 +68,9 @@ namespace animation {
 				/** "next_index"
 				 */
 				KEY_NEXT_INDEX,
+				/** "stop"
+				 */
+				KEY_STOP,
 			} current_key = KEY_NONE;
 			/** Depth in the skipped element
 			 *
@@ -83,18 +91,24 @@ namespace animation {
 			const yajl_callbacks callbacks = {yajl_null,yajl_boolean,yajl_integer,yajl_double,NULL,yajl_string,yajl_start_map,yajl_map_key,yajl_end_map,yajl_start_array,yajl_end_array};
 			
 			animation::stop<animation::basic_rgbw<double>> current_stop;
+			animation::led_state current_state;
 			
 			/** Reset current_stop
 			 *
 			 * Clear current_stop member to defaults values (all zeros)
 			 */
 			void reset_stop(void);
+			/** Reset current LED state
+			 *
+			 * Clear current_state member to defaults values (all zeros)
+			 */
+			void reset_init_state(void);
 		protected:
 			/** Parse error string
 			 */
 			std::string parse_error;
 			
-			virtual int emit_initial_index(uint16_t value) = 0;
+			virtual int emit_init_state(animation::led_state& state) = 0;
 			virtual int emit_stop(animation::stop<animation::basic_rgbw<double>> &stop) = 0;
 		public:
 			parser(void);

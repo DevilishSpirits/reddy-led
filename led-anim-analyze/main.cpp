@@ -8,11 +8,11 @@
 
 class my_parser: public animation::parser {
 	public:
-		std::vector<uint16_t> initial_indexes;
+		std::vector<animation::led_state> initial_state;
 		std::vector<animation::stop<animation::basic_rgbw<double>>> stops;
 		
-		int emit_initial_index(uint16_t value) override {
-			initial_indexes.push_back(value);
+		int emit_init_state(animation::led_state& state) override {
+			initial_state.push_back(state);
 			return 1;
 		}
 		int emit_stop(animation::stop<animation::basic_rgbw<double>> &stop) {
@@ -68,9 +68,9 @@ int main(int argc, char** argv)
 	}
 	// Sanity checks
 	bool sane = true;
-	for (auto i = 0; i < parser.initial_indexes.size(); i++)
-		if (parser.initial_indexes[i] >= parser.stops.size()) {
-			std::cerr << "Item " << i << " of \"initial_indexes\" is greater than the number of \"stops\" (" << parser.initial_indexes[i] << " must be less than " << parser.stops.size() << ")" << std::endl;
+	for (auto i = 0; i < parser.initial_state.size(); i++)
+		if (parser.initial_state[i].current >= parser.stops.size()) {
+			std::cerr << "\"stop\" of the " << i << "th \"init\" is greater than the number of \"stops\" (" << parser.initial_state[i].current << " must be less than " << parser.stops.size() << ")" << std::endl;
 			sane = false;
 		}
 	for (auto i = 0; i < parser.stops.size(); i++)
@@ -95,10 +95,10 @@ int main(int argc, char** argv)
 	std::cout << std::endl;
 	// Print initial state
 	std::cout << "Initial LED states:" << std::endl;
-	for (int i = 0; i < parser.initial_indexes.size(); i++) {
-		const auto  initial_index = parser.initial_indexes[i % parser.initial_indexes.size()];
-		const auto &stop = parser.stops[initial_index];
-		std::cout << "#" << i << ' ' << term_color(stop.color) << "●\x1b[0m\tinitial_index:" << initial_index << std::endl;
+	for (int i = 0; i < parser.initial_state.size(); i++) {
+		const auto &state = parser.initial_state[i % parser.initial_state.size()];
+		const auto &stop = parser.stops[state.current];
+		std::cout << "#" << i << ' ' << term_color(stop.color) << "●\x1b[0m\tstop:" << state.current << std::endl;
 	}
 	return 0;
 }

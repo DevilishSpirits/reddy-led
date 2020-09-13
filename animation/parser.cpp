@@ -32,6 +32,10 @@ void animation::parser::reset_stop(void)
 {
 	memset(&current_stop,0,sizeof(current_stop));
 }
+void animation::parser::reset_init_state(void)
+{
+	memset(&current_state,0,sizeof(current_state));
+}
 
 int animation::parser::yajl_null(void *ctx)
 {
@@ -63,14 +67,9 @@ int animation::parser::yajl_integer(void *ctx, long long integerVal)
 	// Dispatch
 	switch (parser->current_key) {
 		case KEY_NONE:
-		case KEY_INIT_INDEXES:
-			switch (parser->tree_state) {
-				case TREE_INIT_INDEXES:
-					return parser->emit_initial_index(integerVal);
-				default:
-					parser->parse_error = "Unexpected integer";
-					return 0;
-			}
+		case KEY_STOP:
+			parser->current_state.current = integerVal;
+			return 1;
 		case KEY_NEXT_INDEX:
 			parser->current_stop.next_index = integerVal;
 			return 1;
@@ -103,10 +102,10 @@ int animation::parser::yajl_double(void *ctx, double doubleVal)
 			parser->current_stop.duration = doubleVal*10;
 			return 1;
 		case KEY_NEXT_INDEX:
-		case KEY_INIT_INDEXES: {
+		case KEY_STOP: {
 			double i;
 			if (std::modf(doubleVal,&i)) {
-				parser->parse_error = "\"next_index\" and \"init_indexes\" only take integers";
+				parser->parse_error = "\"next_index\" and \"stop\" only take integers";
 				return 0;
 			} else return yajl_integer(ctx,i);
 		}
@@ -133,8 +132,8 @@ int animation::parser::yajl_map_key(void *ctx, const unsigned char *key_u, size_
 		// We are in the root, expect a "stops", "init_indexes" or "init_step" subkey
 		if (!strncmp(key,"stops",stringLen))
 			parser->current_key = KEY_STOPS;
-		else if (!strncmp(key,"init_indexes",stringLen))
-			parser->current_key = KEY_INIT_INDEXES;
+		else if (!strncmp(key,"init",stringLen))
+			parser->current_key = KEY_INIT;
 		else parser->current_key = KEY_NONE;
 	} else if (parser->tree_state == TREE_STOP_ELEMENT) {
 		// We are in a stop element, expect a color component, "duration" or the "next_index" subkey
@@ -150,6 +149,11 @@ int animation::parser::yajl_map_key(void *ctx, const unsigned char *key_u, size_
 			parser->current_key = KEY_DURATION;
 		else if (!strncmp(key,"next_index",stringLen))
 			parser->current_key = KEY_NEXT_INDEX;
+		else parser->current_key = KEY_NONE;
+	} else if (parser->tree_state == TREE_INIT_ELEMENT) {
+		// We are in a init element, expect the starting "stop" and "remaining" subkeys
+		if (!strncmp(key,"stop",stringLen))
+			parser->current_key = KEY_STOP;
 		else parser->current_key = KEY_NONE;
 	} else parser->current_key = KEY_NONE;
 	return 1;
@@ -171,6 +175,9 @@ int animation::parser::yajl_start_map(void *ctx)
 			if (parser->tree_state == TREE_STOPS_ARRAY) {
 				parser->tree_state = TREE_STOP_ELEMENT;
 				return 1;
+			} else if (parser->tree_state == TREE_INIT_ARRAY) {
+				parser->tree_state = TREE_INIT_ELEMENT;
+				return 1;
 			} else {
 				parser->parse_error = "Unexpected map";
 				return 0;
@@ -191,6 +198,12 @@ int animation::parser::yajl_end_map(void *ctx)
 			parser->reset_stop();
 			parser->tree_state = TREE_STOPS_ARRAY;
 			return 1;
+		case TREE_INIT_ELEMENT:
+			if (!parser->emit_init_state(parser->current_state))
+				return 0;
+			parser->reset_init_state();
+			parser->tree_state = TREE_INIT_ARRAY;
+			return 1;
 		case TREE_ROOT_MAP:
 			parser->tree_state = TREE_TOP_LEVEL;
 			return 1;
@@ -207,8 +220,8 @@ int animation::parser::yajl_start_array(void *ctx)
 		case KEY_STOPS:
 			parser->tree_state = TREE_STOPS_ARRAY;
 			return 1;
-		case KEY_INIT_INDEXES:
-			parser->tree_state = TREE_INIT_INDEXES;
+		case KEY_INIT:
+			parser->tree_state = TREE_INIT_ARRAY;
 			return 1;
 		default:
 			parser->parse_error = "Unexpected array";
