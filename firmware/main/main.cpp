@@ -26,6 +26,11 @@ extern "C" {
 	void app_main(void);
 }
 
+#if !NO_COLOR_BUFFER
+static std::array<firmware::color_t,CONFIG_LSTRIP_LED_COUNT> lled_colors;
+static std::array<firmware::color_t,CONFIG_USTRIP_LED_COUNT> uled_colors;
+#endif
+
 void app_main()
 {
 	// Setup GPIO
@@ -33,12 +38,13 @@ void app_main()
 	gpio_set_direction(gpio_num_t(CONFIG_LED_PIN),GPIO_MODE_OUTPUT);
 	// Print startup banner
 	board_led_on();
-	printf("RED's LED strip controller 2020-09-09\n"
+	puts("RED's LED strip controller 2020-09-09");
+	/*printf(
 	"Compiled using GCC " __VERSION__
 	#ifdef IDF_VER
 	", using IDF " IDF_VER
 	#endif
-	" on " __TIMESTAMP__ "\n\nLower strip on pin %d (%d LEDs)\nHigher strip on pin %d (%d LEDs)\n\n",CONFIG_LSTRIP_PIN,CONFIG_USTRIP_LED_COUNT,CONFIG_USTRIP_PIN,CONFIG_USTRIP_LED_COUNT);
+	" on " __TIMESTAMP__ "\n\nLower strip on pin %d (%d LEDs)\nHigher strip on pin %d (%d LEDs)\n\n",CONFIG_LSTRIP_PIN,CONFIG_USTRIP_LED_COUNT,CONFIG_USTRIP_PIN,CONFIG_USTRIP_LED_COUNT);*/
 	vTaskDelay(250 / portTICK_PERIOD_MS);
 	board_led_off();
 	
@@ -98,10 +104,6 @@ void app_main()
 	// Enter main-loop
 	printf("Entering main loop !\n");
 	int64_t last_time = esp_timer_get_time();
-	#if !NO_COLOR_BUFFER
-	std::array<firmware::color_t,CONFIG_LSTRIP_LED_COUNT> lled_colors;
-	std::array<firmware::color_t,CONFIG_USTRIP_LED_COUNT> uled_colors;
-	#endif
 	while (1) {
 		// Reset the watchdog
 		esp_task_wdt_reset();
