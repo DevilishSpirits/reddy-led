@@ -107,7 +107,6 @@ void app_main()
 	while (1) {
 		// Reset the watchdog
 		esp_task_wdt_reset();
-		vTaskDelay(10 / portTICK_PERIOD_MS);
 		// Lock the animation
 		std::lock_guard<std::mutex> lock(firmware::animation_lock);
 		// Write samples and wait
