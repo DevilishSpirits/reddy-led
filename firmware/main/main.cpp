@@ -98,7 +98,7 @@ void app_main()
 			"]"
 		"}";
 		firmware::parser parser;
-		parser.parse(json_demo,sizeof(json_demo));
+		parser.parse(json_demo,sizeof(json_demo)-1);
 		parser.complete_parse();
 	}
 	// Enter main-loop
