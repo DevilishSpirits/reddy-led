@@ -70,6 +70,7 @@ const httpd_uri_t firmware::http_uri_GETinfos = {
 esp_err_t firmware::start_httpd(void)
 {
 	esp_err_t code;
+	config.stack_size = 20480;
 	if ((code = httpd_start(&handle,&config)) == ESP_OK) {
 		httpd_register_uri_handler(handle,&http_uri_GETinfos);
 		httpd_register_uri_handler(handle,&http_uri_PUTanim);
