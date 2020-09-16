@@ -63,7 +63,7 @@ yajl_status firmware::parser::complete_parse(void)
 	/* - Animation is sane - */
 	// Repeat the pattern on unset LEDs
 	const unsigned int led_count = lled_states.size() + uled_states.size();
-	for (auto i = next_led_state_index+1; i < led_count; i++)
+	for (auto i = next_led_state_index; i < led_count; i++)
 		led_state_from_json_index(i) = led_state_from_json_index(i % next_led_state_index);
 	return yajl_status_ok;
 }
