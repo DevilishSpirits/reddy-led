@@ -6,6 +6,8 @@
 animation::parser::parser(void)
 {
 	yajl_parser = yajl_alloc(&callbacks,NULL,this);
+	reset_stop();
+	reset_init_state();
 }
 animation::parser::~parser(void)
 {
