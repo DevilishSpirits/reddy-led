@@ -31,6 +31,23 @@ static std::array<firmware::color_t,CONFIG_LSTRIP_LED_COUNT> lled_colors;
 static std::array<firmware::color_t,CONFIG_USTRIP_LED_COUNT> uled_colors;
 #endif
 
+
+template <unsigned int led_count>
+static void update_animation(std::array<animation::led_state,led_count> led_states, std::array<firmware::color_t,led_count>& colors)
+{
+	for (auto i = 0; i < led_count; i++) {
+		animation::led_state &led_state = led_states[i];
+		led_state.update<typeof(firmware::global_animation)>(firmware::global_animation,firmware::current_frame_ticks_forward);
+		const firmware::animation_stop_t &from_stop = firmware::global_animation[led_state.current];
+		if (from_stop.duration) {
+			const firmware::animation_stop_t &to_stop = firmware::global_animation[from_stop.next_index];
+			
+			colors[i] = firmware::color_t::mix(from_stop.color,to_stop.color,((led_state.remaining+1)*firmware::frame_step_divider) - firmware::subframe_difference,from_stop.duration*firmware::frame_step_divider);
+		} else colors[i] = from_stop.color;
+		std::swap(colors[i].red,colors[i].green);
+	}
+}
+
 void app_main()
 {
 	// Setup GPIO
@@ -102,28 +119,8 @@ void app_main()
 			firmware::current_frame_ticks_forward = (now_time - last_time) / firmware::frame_step_divider;
 			firmware::subframe_difference         = (now_time - last_time) % firmware::frame_step_divider;
 			board_led_on();
-			for (auto i = 0; i < CONFIG_LSTRIP_LED_COUNT; i++) {
-				animation::led_state &led_state = firmware::lled_states[i];
-				led_state.update<typeof(firmware::global_animation)>(firmware::global_animation,firmware::current_frame_ticks_forward);
-				const firmware::animation_stop_t &from_stop = firmware::global_animation[led_state.current];
-				if (from_stop.duration) {
-					const firmware::animation_stop_t &to_stop = firmware::global_animation[from_stop.next_index];
-					
-					lled_colors[i] = firmware::color_t::mix(from_stop.color,to_stop.color,((led_state.remaining+1)*firmware::frame_step_divider) - firmware::subframe_difference,from_stop.duration*firmware::frame_step_divider);
-				} else lled_colors[i] = from_stop.color;
-				std::swap(lled_colors[i].red,lled_colors[i].green);
-			}
-			for (auto i = 0; i < CONFIG_USTRIP_LED_COUNT; i++) {
-				animation::led_state &led_state = firmware::uled_states[i];
-				led_state.update<typeof(firmware::global_animation)>(firmware::global_animation,firmware::current_frame_ticks_forward);
-				const firmware::animation_stop_t &from_stop = firmware::global_animation[led_state.current];
-				if (from_stop.duration) {
-					const firmware::animation_stop_t &to_stop = firmware::global_animation[from_stop.next_index];
-					
-					uled_colors[i] = firmware::color_t::mix(from_stop.color,to_stop.color,((led_state.remaining+1)*firmware::frame_step_divider) - firmware::subframe_difference,from_stop.duration*firmware::frame_step_divider);
-				} else uled_colors[i] = from_stop.color;
-				std::swap(uled_colors[i].red,uled_colors[i].green);
-			}
+			update_animation<CONFIG_LSTRIP_LED_COUNT>(firmware::lled_states,lled_colors);
+			update_animation<CONFIG_USTRIP_LED_COUNT>(firmware::uled_states,uled_colors);
 		}
 		lstrip.write_sample(reinterpret_cast<uint8_t*>(lled_colors.data()),lled_colors.size() * sizeof(lled_colors[0]),true);
 		lstrip.write_sample(reinterpret_cast<uint8_t*>(uled_colors.data()),uled_colors.size() * sizeof(uled_colors[0]),true);
