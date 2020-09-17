@@ -84,14 +84,8 @@ void app_main()
 	
 	// Init with black
 	firmware::global_animation[0].color      = firmware::color_t(0,0,0);
-	firmware::global_animation[0].duration   = 50;
-	firmware::global_animation[0].next_index = 1;
-	firmware::global_animation[1].color      = firmware::color_t(0,0,0);
-	firmware::global_animation[1].duration   = 50;
-	firmware::global_animation[1].next_index = 2;
-	firmware::global_animation[2].color      = firmware::color_t(0.5,0.5,0.5,0.5);
-	firmware::global_animation[2].duration   = 50;
-	firmware::global_animation[2].next_index = 0;
+	firmware::global_animation[0].duration   = 100;
+	firmware::global_animation[0].next_index = 0;
 	memset(&firmware::lled_states,0,sizeof(firmware::lled_states));
 	memset(&firmware::uled_states,0,sizeof(firmware::uled_states));
 	// Enter main-loop
